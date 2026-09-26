@@ -1,0 +1,224 @@
+"""Coldline.
+
+===================
+
+File:              src/adapters/model/ollama.py
+Component:         Adapter — Ollama (Task 3.11 scaffold)
+Purpose:           Call an Ollama server's generate endpoint through the ModelProvider port.
+Interacts With:    ports.ModelProvider, domain.contracts, domain.errors, httpx, an Ollama
+                    server or the supplied stub (tests/doubles/ollama_stub.py)
+Sprint/Task:       Sprint 3 — Project 3 / Task 3.11
+Concepts:          Boundary translation, per-request timeout, failure classification
+Tools:             Python 3.12, httpx, Ollama HTTP API
+
+Ollama is a program that serves open models over a local HTTP endpoint. This adapter is
+the second real ``ModelProvider``; the first is the deterministic emulator beside it. The
+transport is supplied and complete: the asynchronous HTTP client, the per-request timeout,
+the two settings names, and ``summarize`` itself, which sends the body the request-mapping
+part builds to ``POST /api/generate`` and hands the decoded JSON reply to the parsing part.
+
+Three parts are marked TODO and are Task 3.11's work, each between a ``begin`` and an
+``end`` marker line. Change nothing outside those three regions: the public check compares
+everything else in this file with the supplied scaffold.
+
+- ``_build_request_body`` (Step 1): one ``ModelRequest`` to the JSON body Ollama accepts.
+- ``_parse_reply`` (Step 1): Ollama's JSON reply to the ``ModelSummary`` the worker stores.
+- ``_classify_failure`` (Step 2): what went wrong, as ``RetryableProviderError`` or
+  ``TerminalProviderError``, so the resilient wrapper retries only what may succeed later.
+
+The two settings the harness reads for the ``ollama`` run: ``COLDLINE_OLLAMA_URL`` (the
+endpoint Ollama serves on, ``http://localhost:11434`` unless changed) and
+``COLDLINE_OLLAMA_MODEL`` (the exact name of a model pulled into that Ollama). The adapter
+never reads the process environment itself; a caller passes the two values in, as
+``from_settings`` shows. Keep both out of every committed file.
+"""
+
+from collections.abc import Mapping
+from typing import Any, NoReturn
+
+import httpx
+from opentelemetry import trace
+
+from domain.contracts import ModelRequest, ModelSummary
+from domain.errors import ProviderError, RetryableProviderError, TerminalProviderError
+
+_TRACER = trace.get_tracer(__name__)
+
+# Ollama's generate endpoint: one JSON object in, one JSON object back when `stream` is
+# false, a stream of JSON fragments when it is true or absent.
+GENERATE_PATH = "/api/generate"
+# The label every summary this adapter returns must carry. It is the adapter's own name,
+# never the `model` field of a reply.
+PROVIDER_LABEL = "ollama"
+# The two settings the harness reads, and the default endpoint Ollama serves on.
+URL_SETTING = "COLDLINE_OLLAMA_URL"
+MODEL_SETTING = "COLDLINE_OLLAMA_MODEL"
+DEFAULT_URL = "http://localhost:11434"
+# Applied to every request on its own; the worker's per-attempt timeout is the resilient
+# wrapper's, outside this adapter.
+DEFAULT_TIMEOUT_SECONDS = 30.0
+# The two outcomes the classification part may raise, and the only two the transport lets
+# through unchanged; the resilient wrapper reads exactly these.
+CLASSIFIED_OUTCOMES: tuple[type[ProviderError], ...] = (
+    RetryableProviderError,
+    TerminalProviderError,
+)
+
+
+class MalformedReplyError(ValueError):
+    """Report a reply that is not the JSON object Ollama's generate endpoint returns.
+
+    The transport raises it for a body that is not JSON (a streamed reply, an HTML error
+    page). The parsing part raises it for a JSON object with no ``response`` field or an
+    empty one. Either way the classification part decides what it means to the caller.
+    """
+
+
+class OllamaModelProvider:
+    """Summarize one temperature excursion through an Ollama server's generate endpoint."""
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        *,
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        """Bind the adapter to one endpoint, one model, and one per-request timeout."""
+        if not base_url.strip():
+            raise ValueError("base_url must name the endpoint Ollama serves on")
+        if not model.strip():
+            raise ValueError("model must name the model Ollama should call")
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
+        self._base_url = base_url.rstrip("/")
+        self._model = model
+        self._timeout = httpx.Timeout(timeout_seconds)
+        self._client = client if client is not None else httpx.AsyncClient(base_url=self._base_url)
+
+    @classmethod
+    def from_settings(
+        cls,
+        settings: Mapping[str, str],
+        *,
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    ) -> "OllamaModelProvider":
+        """Build the adapter from the two named settings in a mapping such as a shell's.
+
+        ``COLDLINE_OLLAMA_URL`` defaults to the endpoint Ollama serves on out of the box;
+        ``COLDLINE_OLLAMA_MODEL`` has no default, because the model is whichever one was
+        pulled into that Ollama.
+        """
+        model = settings.get(MODEL_SETTING, "").strip()
+        if not model:
+            raise ValueError(f"{MODEL_SETTING} must name the model to call")
+        return cls(settings.get(URL_SETTING, DEFAULT_URL), model, timeout_seconds=timeout_seconds)
+
+    @property
+    def model(self) -> str:
+        """Return the model name every request body names."""
+        return self._model
+
+    @property
+    def base_url(self) -> str:
+        """Return the endpoint this adapter sends requests to."""
+        return self._base_url
+
+    async def aclose(self) -> None:
+        """Release the HTTP client's connections."""
+        await self._client.aclose()
+
+    async def summarize(self, request: ModelRequest) -> ModelSummary:
+        """Send one generate request and return the summary, or raise a classified error.
+
+        Supplied transport, not part of the three TODO regions. It builds the body with
+        the request-mapping part, posts it with the per-request timeout, surfaces four
+        situations to the classification part (the connection was refused or dropped,
+        the request timed out, the server answered with a status code, the body could
+        not be parsed), and hands a parsed reply to the parsing part.
+        """
+        body = self._build_request_body(request)
+        with _TRACER.start_as_current_span(
+            "model_provider.summarize",
+            attributes={
+                "coldline.exception_id": request.exception_id,
+                "coldline.provider": PROVIDER_LABEL,
+            },
+        ):
+            try:
+                response = await self._client.post(
+                    GENERATE_PATH, json=body, timeout=self._timeout
+                )
+                response.raise_for_status()
+                try:
+                    reply = response.json()
+                except ValueError as exc:
+                    raise MalformedReplyError(
+                        "the reply body is not one JSON object; a stream of JSON fragments "
+                        "arrives when the request leaves `stream` unset or true"
+                    ) from exc
+                if not isinstance(reply, dict):
+                    raise MalformedReplyError("the reply is not a JSON object")
+                return self._parse_reply(reply)
+            except CLASSIFIED_OUTCOMES:
+                raise
+            except (httpx.HTTPError, MalformedReplyError) as exc:
+                self._classify_failure(exc)
+
+    def _build_request_body(self, request: ModelRequest) -> dict[str, Any]:
+        """Map one ModelRequest to the JSON body Ollama's generate endpoint accepts.
+
+        ``POST /api/generate`` takes a JSON object with the model name (``self.model``),
+        a ``prompt`` string, and ``stream``. Set ``stream`` to ``False``: Ollama streams
+        unless told not to, and a streamed reply is many JSON fragments, not the one
+        object ``_parse_reply`` reads. Write a prompt that names the shipment, the
+        reading, and both bounds and asks for one short operational summary; the
+        conformance tests look for every value of the request in the body, written the
+        way Python prints it (``9.2``, ``2.0``, ``shipment-syn-001``).
+        """
+        # TODO(Task 3.11) request mapping: begin
+        # Placeholder: names the model and the exception and leaves `stream` unset, so
+        # Ollama streams and the reply cannot be parsed. Replace it with the body above.
+        return {"model": self.model, "prompt": f"Summarize exception {request.exception_id}."}
+        # TODO(Task 3.11) request mapping: end
+
+    def _parse_reply(self, reply: dict[str, Any]) -> ModelSummary:
+        """Turn Ollama's JSON reply into the ModelSummary the worker stores.
+
+        Ollama answers with an object whose ``response`` field holds the generated text;
+        ``model``, ``created_at``, ``done`` and timing fields travel beside it. Return
+        ``ModelSummary(summary=<that text, stripped>, provider=PROVIDER_LABEL)``: the
+        label is this adapter's own name, never the reply's ``model`` field. A reply with
+        no ``response`` field, or an empty one, is malformed: raise
+        ``MalformedReplyError`` so the classification part decides, and never return an
+        empty summary.
+        """
+        # TODO(Task 3.11) response parsing: begin
+        # Placeholder: copies the reply's `model` field into the label and lets an empty
+        # `response` through as an empty summary. Replace it with the parsing above.
+        return ModelSummary(
+            summary=str(reply.get("response", "")).strip(),
+            provider=str(reply.get("model", "")),
+        )
+        # TODO(Task 3.11) response parsing: end
+
+    def _classify_failure(self, exc: Exception) -> NoReturn:
+        """Raise the classified error for one failure the transport surfaced.
+
+        ``exc`` is one of four things: an ``httpx.TimeoutException`` (the request timed
+        out), another ``httpx.TransportError`` (the connection was refused or dropped),
+        an ``httpx.HTTPStatusError`` (the server answered with a status code, in
+        ``exc.response.status_code``), or a ``MalformedReplyError`` (the body could not
+        be parsed as the generate contract). A connection error, a timeout, and a 5xx
+        status are the provider being slow or down: raise ``RetryableProviderError``. A
+        4xx status means the request itself is wrong and a malformed reply means the
+        provider is not speaking the contract: raise ``TerminalProviderError`` for both.
+        Chain the original with ``from exc`` so the cause survives in the log.
+        """
+        # TODO(Task 3.11) error classification: begin
+        # Placeholder: the transport's own exception escapes unclassified, which the
+        # resilient wrapper treats as retryable whatever it was. Replace it with the
+        # four-way sort described above.
+        raise exc
+        # TODO(Task 3.11) error classification: end

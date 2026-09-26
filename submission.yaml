@@ -1,0 +1,65 @@
+# Coldline - Task 3.11
+# File: submission.yaml
+# Component: Student answer sheet
+# Purpose: Record the figures from your own three provider runs and the structured primary and fallback decision.
+# Interacts With: Submission schema, public verifier, provider contract checks, protected answer key
+# Sprint/Task: Sprint 3 - Project 3 / Task 3.11
+# Concepts: Model provider adapters, conformance, latency percentiles, primary and fallback
+# Tools: YAML
+
+# Complete submission.yaml from your own runs and the sources named beside each answer group.
+# Keep the supplied keys; replace empty strings and zeros using each field's stated type.
+# Empty values and placeholder text fail verification.
+# Use submission-sample.yaml for format only; do not copy its fictional values.
+# Do not include secrets, personal data, endpoint URLs, or local absolute paths.
+
+answers:
+  # Task 3.11 — Steps 3 and 4: the three runs
+  # Source: docs/student/providers/<name>-latency.json, exactly as `poe provider-latency`
+  # wrote them (emulator-latency.json, hosted-fixture-latency.json, ollama-latency.json).
+  # Each entry has the same five fields:
+  #   status: ran | not_run
+  #   p50_ms, p95_ms: the file's p50_ms and p95_ms, whole milliseconds
+  #   retryable_errors, terminal_errors: the file's counts, whole numbers
+  # Copy every figure as written; do not round or "clean" it, the check compares them
+  # exactly. emulator and hosted_fixture are `ran` from Step 3. ollama is `ran` with the
+  # figures from your own manual Ollama run (Step 4), or `not_run` with all four figures
+  # set to null and no ollama-latency.json committed.
+  runs:
+    emulator:
+      status: ""
+      p50_ms: 0
+      p95_ms: 0
+      retryable_errors: 0
+      terminal_errors: 0
+    hosted_fixture:
+      status: ""
+      p50_ms: 0
+      p95_ms: 0
+      retryable_errors: 0
+      terminal_errors: 0
+    ollama:
+      status: ""
+      p50_ms: 0
+      p95_ms: 0
+      retryable_errors: 0
+      terminal_errors: 0
+
+  # Task 3.11 — Step 5: the primary and fallback decision
+  # primary, fallback: ollama | hosted_api | emulator, and they must differ.
+  #   hosted_api means the hosted provider your fixture was recorded from; ollama means a
+  #   self-hosted Ollama; emulator means the deterministic local provider the worker calls
+  #   today.
+  # fallback_trigger: retry_budget_exhausted | latency_over_budget | provider_unreachable
+  #   the condition the worker would switch on: the resilient wrapper raised
+  #   RetryableProviderError after spending its attempts on the primary; the primary's p95
+  #   in your runs is above the worker's per-attempt timeout; or the primary refused the
+  #   connection before any attempt ran. Pick the one your figures and your Step 2
+  #   classification would produce.
+  # notes: at most 600 characters: the provider on the fixture's first line, one limit of
+  #   what your runs prove about each of the primary and the fallback, and whether a server
+  #   built for serving open models (vLLM, for example) would change your choice and why.
+  primary: ""
+  fallback: ""
+  fallback_trigger: ""
+  notes: ""

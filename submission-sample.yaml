@@ -1,0 +1,40 @@
+# Coldline - Task 3.11
+# File: submission-sample.yaml
+# Component: Fictional completed answer sheet
+# Purpose: Show the accepted shape.
+# Interacts With: docs/contracts/submission.schema.json
+# Sprint/Task: Sprint 3 - Project 3 / Task 3.11
+# Concepts: Answer-sheet shape
+# Tools: YAML
+
+# Complete submission.yaml from your own runs and the sources named beside each answer group.
+# Keep the supplied keys; replace empty strings and zeros using each field's stated type.
+# Empty values and placeholder text fail verification.
+# Use submission-sample.yaml for format only; do not copy its fictional values.
+# Do not include secrets, personal data, endpoint URLs, or local absolute paths.
+# This fictional sample is not a result to submit; an exact copy is rejected.
+
+answers:
+  runs:
+    emulator:
+      status: "ran"
+      p50_ms: 3
+      p95_ms: 4
+      retryable_errors: 0
+      terminal_errors: 0
+    hosted_fixture:
+      status: "ran"
+      p50_ms: 910
+      p95_ms: 2140
+      retryable_errors: 3
+      terminal_errors: 1
+    ollama:
+      status: "ran"
+      p50_ms: 4210
+      p95_ms: 9870
+      retryable_errors: 0
+      terminal_errors: 0
+  primary: "emulator"
+  fallback: "hosted_api"
+  fallback_trigger: "provider_unreachable"
+  notes: "Fictional: the fixture names a made-up provider; the emulator run proves only a configured delay and the hosted replay proves one recorded afternoon; a serving-grade open-model server would not change a choice made from these three runs alone."

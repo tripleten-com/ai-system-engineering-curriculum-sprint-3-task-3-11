@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Coldline Task 3.11 public answer contract. Three run entries copied from the student's own latency harness output (one per provider: status, p50, p95, and the two error counts, or not_run with null figures for an Ollama run that could not happen), a structured primary and fallback decision, the condition that triggers the switch, and a bounded note. The provider contract checks compare each ran entry with its committed latency file as written and require primary to differ from fallback; the protected check compares primary, fallback, and fallback_trigger with the answer key. There is no self-attestation field, no pass boolean, and no endpoint URL.",
+  "title": "Coldline Task 3.11 answers",
+  "description": "The three provider runs, the primary and fallback decision, the fallback trigger, and the note.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["answers"],
+  "properties": {
+    "answers": {
+      "description": "The only top-level answer mapping accepted by the public verifier.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs", "primary", "fallback", "fallback_trigger", "notes"],
+      "properties": {
+        "runs": {
+          "description": "One entry per provider the harness can measure, keyed as the answer sheet names them.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["emulator", "hosted_fixture", "ollama"],
+          "properties": {
+            "emulator": {"$ref": "#/$defs/run"},
+            "hosted_fixture": {"$ref": "#/$defs/run"},
+            "ollama": {"$ref": "#/$defs/run"}
+          }
+        },
+        "primary": {
+          "description": "The provider the worker should call first for every summary.",
+          "$ref": "#/$defs/provider_choice"
+        },
+        "fallback": {
+          "description": "The provider the worker should switch to when the primary fails the way fallback_trigger names; must differ from primary.",
+          "$ref": "#/$defs/provider_choice"
+        },
+        "fallback_trigger": {
+          "description": "The observable condition under which the worker switches from the primary to the fallback.",
+          "enum": ["retry_budget_exhausted", "latency_over_budget", "provider_unreachable"]
+        },
+        "notes": {
+          "description": "At most 600 characters: the provider on the fixture's first line, one limit of what your runs prove about each of the primary and the fallback, and whether a server built for serving open models would change the choice and why.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        }
+      }
+    }
+  },
+  "$defs": {
+    "provider_choice": {
+      "description": "ollama (a self-hosted Ollama), hosted_api (the hosted provider the fixture was recorded from), or emulator (the deterministic local provider the worker calls today).",
+      "enum": ["ollama", "hosted_api", "emulator"]
+    },
+    "figure": {
+      "description": "A whole number copied from the harness output, or null when the run did not happen.",
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "run": {
+      "description": "One provider's run: ran with the four figures copied from its latency file, or not_run with all four null.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "p50_ms", "p95_ms", "retryable_errors", "terminal_errors"],
+      "properties": {
+        "status": {"enum": ["ran", "not_run"]},
+        "p50_ms": {"$ref": "#/$defs/figure"},
+        "p95_ms": {"$ref": "#/$defs/figure"},
+        "retryable_errors": {"$ref": "#/$defs/figure"},
+        "terminal_errors": {"$ref": "#/$defs/figure"}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": {"const": "ran"},
+            "p50_ms": {"type": "integer"},
+            "p95_ms": {"type": "integer"},
+            "retryable_errors": {"type": "integer"},
+            "terminal_errors": {"type": "integer"}
+          }
+        },
+        {
+          "properties": {
+            "status": {"const": "not_run"},
+            "p50_ms": {"type": "null"},
+            "p95_ms": {"type": "null"},
+            "retryable_errors": {"type": "null"},
+            "terminal_errors": {"type": "null"}
+          }
+        }
+      ]
+    }
+  }
+}
