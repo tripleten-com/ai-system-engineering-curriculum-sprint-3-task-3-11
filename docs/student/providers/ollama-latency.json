@@ -1,0 +1,161 @@
+{
+  "digest": "sha256:14cf6c5880b7ddbd0f7e146d3d55381526ad63d5dc6d9c1ba8ddcc38b4d497c9",
+  "generator": "poe provider-latency",
+  "latency_over": "successful_requests",
+  "p50_ms": 4358,
+  "p95_ms": 6730,
+  "provider": "ollama",
+  "recorded_at": "2026-09-30T07:38:20+00:00",
+  "request_count": 20,
+  "requests": [
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-001",
+      "latency_ms": 8322.6,
+      "outcome": "ok",
+      "sequence": 1
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-002",
+      "latency_ms": 4357.5,
+      "outcome": "ok",
+      "sequence": 2
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-003",
+      "latency_ms": 3442.5,
+      "outcome": "ok",
+      "sequence": 3
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-004",
+      "latency_ms": 2692.7,
+      "outcome": "ok",
+      "sequence": 4
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-005",
+      "latency_ms": 4124.6,
+      "outcome": "ok",
+      "sequence": 5
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-006",
+      "latency_ms": 4619.3,
+      "outcome": "ok",
+      "sequence": 6
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-007",
+      "latency_ms": 5584.6,
+      "outcome": "ok",
+      "sequence": 7
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-008",
+      "latency_ms": 4596.2,
+      "outcome": "ok",
+      "sequence": 8
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-009",
+      "latency_ms": 3773.8,
+      "outcome": "ok",
+      "sequence": 9
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-010",
+      "latency_ms": 3489.3,
+      "outcome": "ok",
+      "sequence": 10
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-011",
+      "latency_ms": 3725.5,
+      "outcome": "ok",
+      "sequence": 11
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-012",
+      "latency_ms": 4690.1,
+      "outcome": "ok",
+      "sequence": 12
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-013",
+      "latency_ms": 6730.4,
+      "outcome": "ok",
+      "sequence": 13
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-014",
+      "latency_ms": 4245.6,
+      "outcome": "ok",
+      "sequence": 14
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-015",
+      "latency_ms": 4946.1,
+      "outcome": "ok",
+      "sequence": 15
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-016",
+      "latency_ms": 3941.4,
+      "outcome": "ok",
+      "sequence": 16
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-017",
+      "latency_ms": 4770.8,
+      "outcome": "ok",
+      "sequence": 17
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-018",
+      "latency_ms": 4330.2,
+      "outcome": "ok",
+      "sequence": 18
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-019",
+      "latency_ms": 5433.2,
+      "outcome": "ok",
+      "sequence": 19
+    },
+    {
+      "detail": "ollama",
+      "exception_id": "exc-latency-020",
+      "latency_ms": 4367.7,
+      "outcome": "ok",
+      "sequence": 20
+    }
+  ],
+  "retryable_errors": 0,
+  "schema": "coldline-provider-latency/1",
+  "settings": {
+    "model": "llama3.2:1b",
+    "timeout_seconds": 60.0
+  },
+  "successful_requests": 20,
+  "terminal_errors": 0,
+  "worker_per_attempt_timeout_ms": 2000
+}

@@ -1,0 +1,161 @@
+{
+  "digest": "sha256:569b8cc4fb2ed06b0ac73125b6a5cd62109ff9409ecbd549121db76aa02eb089",
+  "generator": "poe provider-latency",
+  "latency_over": "successful_requests",
+  "p50_ms": 256,
+  "p95_ms": 264,
+  "provider": "emulator",
+  "recorded_at": "2026-09-30T07:34:21+00:00",
+  "request_count": 20,
+  "requests": [
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-001",
+      "latency_ms": 261.4,
+      "outcome": "ok",
+      "sequence": 1
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-002",
+      "latency_ms": 254.7,
+      "outcome": "ok",
+      "sequence": 2
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-003",
+      "latency_ms": 256.4,
+      "outcome": "ok",
+      "sequence": 3
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-004",
+      "latency_ms": 252.0,
+      "outcome": "ok",
+      "sequence": 4
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-005",
+      "latency_ms": 263.8,
+      "outcome": "ok",
+      "sequence": 5
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-006",
+      "latency_ms": 252.5,
+      "outcome": "ok",
+      "sequence": 6
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-007",
+      "latency_ms": 253.5,
+      "outcome": "ok",
+      "sequence": 7
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-008",
+      "latency_ms": 264.3,
+      "outcome": "ok",
+      "sequence": 8
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-009",
+      "latency_ms": 260.6,
+      "outcome": "ok",
+      "sequence": 9
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-010",
+      "latency_ms": 256.5,
+      "outcome": "ok",
+      "sequence": 10
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-011",
+      "latency_ms": 251.1,
+      "outcome": "ok",
+      "sequence": 11
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-012",
+      "latency_ms": 255.7,
+      "outcome": "ok",
+      "sequence": 12
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-013",
+      "latency_ms": 259.6,
+      "outcome": "ok",
+      "sequence": 13
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-014",
+      "latency_ms": 251.7,
+      "outcome": "ok",
+      "sequence": 14
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-015",
+      "latency_ms": 264.1,
+      "outcome": "ok",
+      "sequence": 15
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-016",
+      "latency_ms": 252.5,
+      "outcome": "ok",
+      "sequence": 16
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-017",
+      "latency_ms": 260.3,
+      "outcome": "ok",
+      "sequence": 17
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-018",
+      "latency_ms": 251.3,
+      "outcome": "ok",
+      "sequence": 18
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-019",
+      "latency_ms": 253.8,
+      "outcome": "ok",
+      "sequence": 19
+    },
+    {
+      "detail": "deterministic-local",
+      "exception_id": "exc-latency-020",
+      "latency_ms": 262.5,
+      "outcome": "ok",
+      "sequence": 20
+    }
+  ],
+  "retryable_errors": 0,
+  "schema": "coldline-provider-latency/1",
+  "settings": {
+    "latency_ms": 250,
+    "latency_setting": "COLDLINE_MODEL_LATENCY_MS"
+  },
+  "successful_requests": 20,
+  "terminal_errors": 0,
+  "worker_per_attempt_timeout_ms": 2000
+}

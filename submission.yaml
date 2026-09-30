@@ -27,21 +27,21 @@ answers:
   # set to null and no ollama-latency.json committed.
   runs:
     emulator:
-      status: ""
-      p50_ms: 0
-      p95_ms: 0
+      status: "ran"
+      p50_ms: 256
+      p95_ms: 264
       retryable_errors: 0
       terminal_errors: 0
     hosted_fixture:
-      status: ""
-      p50_ms: 0
-      p95_ms: 0
-      retryable_errors: 0
+      status: "ran"
+      p50_ms: 654
+      p95_ms: 1645
+      retryable_errors: 1
       terminal_errors: 0
     ollama:
-      status: ""
-      p50_ms: 0
-      p95_ms: 0
+      status: "ran"
+      p50_ms: 4358
+      p95_ms: 6730
       retryable_errors: 0
       terminal_errors: 0
 
@@ -59,7 +59,7 @@ answers:
   # notes: at most 600 characters: the provider on the fixture's first line, one limit of
   #   what your runs prove about each of the primary and the fallback, and whether a server
   #   built for serving open models (vLLM, for example) would change your choice and why.
-  primary: ""
-  fallback: ""
-  fallback_trigger: ""
-  notes: ""
+  primary: "hosted_api"
+  fallback: "ollama"
+  fallback_trigger: "retry_budget_exhausted"
+  notes: "Fixture line 1: Tessellate Inference API (tessellate-summarize-1), a synthetic one-afternoon replay, so it proves the comparison, not that provider's real availability, quota or cost. My Ollama p50 4358/p95 6730 ms measures one CPU-only laptop with the whole stack running; it proves the adapter speaks the protocol, not what self-hosting would cost. Hosted p95 1645 ms is inside the worker's 2000 ms per-attempt timeout; Ollama's p50 is over twice it, so it is a reserve, not a peer. A vLLM-style server attacks exactly that latency, so it could change the choice, but I measured none."

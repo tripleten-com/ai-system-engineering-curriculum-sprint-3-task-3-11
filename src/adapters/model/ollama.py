@@ -176,9 +176,18 @@ class OllamaModelProvider:
         way Python prints it (``9.2``, ``2.0``, ``shipment-syn-001``).
         """
         # TODO(Task 3.11) request mapping: begin
-        # Placeholder: names the model and the exception and leaves `stream` unset, so
-        # Ollama streams and the reply cannot be parsed. Replace it with the body above.
-        return {"model": self.model, "prompt": f"Summarize exception {request.exception_id}."}
+        prompt = (
+            "You are a cold-chain operations assistant. Write one short operational "
+            "summary, at most two sentences, of this temperature excursion.\n"
+            f"Exception: {request.exception_id}\n"
+            f"Shipment: {request.shipment_id}\n"
+            f"Measured temperature: {request.temperature_c} C\n"
+            f"Allowed range: {request.allowed_min_c} C to {request.allowed_max_c} C\n"
+            "Name the shipment, state how far the reading is outside the allowed range, "
+            "and say what operations should do next."
+        )
+        # `stream` is false so the reply is one JSON object, not a stream of fragments.
+        return {"model": self.model, "prompt": prompt, "stream": False}
         # TODO(Task 3.11) request mapping: end
 
     def _parse_reply(self, reply: dict[str, Any]) -> ModelSummary:
@@ -193,12 +202,14 @@ class OllamaModelProvider:
         empty summary.
         """
         # TODO(Task 3.11) response parsing: begin
-        # Placeholder: copies the reply's `model` field into the label and lets an empty
-        # `response` through as an empty summary. Replace it with the parsing above.
-        return ModelSummary(
-            summary=str(reply.get("response", "")).strip(),
-            provider=str(reply.get("model", "")),
-        )
+        generated = reply.get("response")
+        if not isinstance(generated, str) or not generated.strip():
+            raise MalformedReplyError(
+                "the reply carries no generated text; the generate contract puts it in a "
+                "non-empty `response` field"
+            )
+        # The label is this adapter's own name, never the reply's `model` field.
+        return ModelSummary(summary=generated.strip(), provider=PROVIDER_LABEL)
         # TODO(Task 3.11) response parsing: end
 
     def _classify_failure(self, exc: Exception) -> NoReturn:
@@ -215,8 +226,26 @@ class OllamaModelProvider:
         Chain the original with ``from exc`` so the cause survives in the log.
         """
         # TODO(Task 3.11) error classification: begin
-        # Placeholder: the transport's own exception escapes unclassified, which the
-        # resilient wrapper treats as retryable whatever it was. Replace it with the
-        # four-way sort described above.
-        raise exc
+        if isinstance(exc, MalformedReplyError):
+            # The provider is not speaking the generate contract; no attempt fixes that.
+            raise TerminalProviderError(f"Ollama returned a malformed reply: {exc}") from exc
+        if isinstance(exc, httpx.HTTPStatusError):
+            status = exc.response.status_code
+            if 400 <= status < 500:
+                # The request itself is wrong: retrying spends the budget for nothing.
+                raise TerminalProviderError(
+                    f"Ollama rejected the request with status {status}"
+                ) from exc
+            # 5xx, and anything else the server answered with, is the provider being
+            # overloaded or broken for now.
+            raise RetryableProviderError(f"Ollama answered with status {status}") from exc
+        if isinstance(exc, httpx.TimeoutException):
+            # Slow, not wrong: a later attempt may land inside the timeout.
+            raise RetryableProviderError(f"the Ollama request timed out: {exc}") from exc
+        if isinstance(exc, httpx.TransportError):
+            # The connection was refused or dropped: the provider is down or restarting.
+            raise RetryableProviderError(f"the Ollama connection failed: {exc}") from exc
+        # Nothing else reaches here from the supplied transport, but an unclassified
+        # exception would be treated as retryable by the wrapper, so name it terminal.
+        raise TerminalProviderError(f"unclassified Ollama failure: {exc}") from exc
         # TODO(Task 3.11) error classification: end
