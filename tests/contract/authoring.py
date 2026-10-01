@@ -10,11 +10,11 @@ Sprint/Task:       Sprint 3 — Project 3
 Concepts:          Dependency direction, identity parity, repository integrity
 Tools:             Python 3.12, AST, uv, Docker Compose YAML
 
-Task 3.7 changes no Compose service, image, or profile either — its assessed surface is
-the pull request's file boundary over the settled Task 6 checkpoint, and the student adds
-no code — so it keeps Task 3.4's Compose project identity rather than isolating a stack
-that is byte-for-byte the same one, matching Task 3.2's, Task 3.5's, and Task 3.6's own
-precedent for a Task with no Compose change.
+Task 3.11 changes no Compose service, image, or profile: its assessed surface is the
+second `ModelProvider` adapter and the provider comparison record. It still supplies its
+own copy of `compose.yaml` under its own Compose project name, because a project shared
+with an earlier Task would let either checkout recreate or reset the other's containers
+and volumes.
 """
 
 from __future__ import annotations
@@ -65,11 +65,13 @@ DISTRIBUTION_NAME = "coldline-task-2-1"
 # Each checkpoint owns its own Compose project so two materializations cannot
 # share containers or volumes. The name is checked, not assumed: a whole-file
 # Compose replacement that forgot to change it would otherwise reconfigure the
-# previous Task's stack. Task 3.7 changes no Compose service, image, or
-# profile either, so it keeps Task 3.4's project identity rather than
-# isolating a stack that is byte-for-byte the same one.
-COMPOSE_PROJECT_NAME = "coldline-task-3-4"
-TASK_ID = "3.7"
+# previous Task's stack. Task 3.11 supplies its own copy of Task 3.4's
+# compose.yaml under its own name. Even with identical services, the images
+# build from this checkout and the observability configuration is bind-mounted
+# from it, so a shared name would let either checkout's `poe start` recreate,
+# and its `poe reset` delete, the other's containers and volumes.
+COMPOSE_PROJECT_NAME = "coldline-task-3-11"
+TASK_ID = "3.11"
 SCHEMA_FILES = (
     "infra/postgres/001_opening_checkpoint.sql",
     "infra/postgres/002_retrieval_corpus.sql",
